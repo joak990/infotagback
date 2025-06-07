@@ -9,7 +9,7 @@ exports.getAnimalByQR = async (req, res) => {
   try {
     const result = await pool.query(
       `SELECT 
-         a.*, 
+         a.nombre AS animal_nombre, 
          d.nombre AS dueño_nombre, 
          d.telefono AS dueño_telefono
        FROM animales a
@@ -29,6 +29,7 @@ exports.getAnimalByQR = async (req, res) => {
   }
 };
 
+
 // Controlador para obtener todos los animales
 exports.getAllAnimals = async (req, res) => {
   try {
@@ -41,4 +42,44 @@ exports.getAllAnimals = async (req, res) => {
 };
   
   
-  
+// Controlador para obtener todos los animales<
+exports.createAnimal = async (req, res) => {
+  try {
+    const { nombre, tipo, edad, qr, dueño_id, codseg } = req.body;
+
+    const insertAnimal = await pool.query(
+      `INSERT INTO animales (nombre, tipo, edad, qr, dueño_id, codseg)
+       VALUES ($1, $2, $3, $4, $5, $6)
+       RETURNING *`,
+      [nombre, tipo, edad, qr, dueño_id, codseg]
+    );
+
+    res.status(201).json(insertAnimal.rows[0]);
+  } catch (error) {
+    console.error('Error al crear animal:', error);
+    res.status(500).json({ mensaje: 'Error al crear el animal' });
+  }
+};
+
+
+exports.getAnimalMedicalInfo = async (req, res) => {
+  try {
+    const { nombre, codseg } = req.body;
+ console.log(req.body, "body")
+    const animalResult = await pool.query(
+      `SELECT * FROM animales WHERE nombre = $1 AND codseg = $2`,
+      [nombre, codseg]
+    );
+
+    const animal = animalResult.rows[0];
+
+    if (!animal) {
+      return res.status(404).json({ mensaje: ' código incorrecto' });
+    }
+
+    res.json({ mensaje: 'Código correcto' });
+  } catch (error) {
+    console.error('Error al validar el código:', error);
+    res.status(500).json({ mensaje: 'Error interno' });
+  }
+};

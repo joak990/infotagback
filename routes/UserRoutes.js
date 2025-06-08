@@ -30,4 +30,27 @@ router.post('/login', async (req, res) => {
   }
 });
 
+const crypto = require('crypto');
+const sendVerificationCode = require('../UtilsMailer');
+
+const verificationCodes = {}; // temporal
+
+router.post('/pre-register', async (req, res) => {
+  
+  const { email } = req.body;
+  console.log(email)
+  if (!email) return res.status(400).json({ message: 'Email requerido' });
+
+  const code = crypto.randomInt(100000, 999999).toString();
+  verificationCodes[email] = code;
+
+  try {
+    await sendVerificationCode(email, code);
+    res.json({ message: 'Código enviado al correo' });
+  } catch (error) {
+    res.status(500).json({ message: 'Error al enviar el código' });
+  }
+});
+
+
 module.exports = router;

@@ -39,7 +39,7 @@ if (!user.uid && user.password) {
 // Si viene con uid (por Google, por ejemplo), no hasheás nada
 const insertUser = await pool.query(
   `INSERT INTO dueños (nombre, email, password, uid, pais, localidad, telefono, isdeleted)
-   VALUES ($1, $2, $3, $4, $5, $6, $7, false)
+   VALUES ($1, $2, $3, $4, $5, $6, $7, true)
    RETURNING *`,
   [
     user.nombre,
@@ -48,7 +48,8 @@ const insertUser = await pool.query(
     user.uid || null,
     user.pais || null,
     user.localidad || null,
-    user.telefono || null
+    user.telefono || null,
+  
   ]
 );
 

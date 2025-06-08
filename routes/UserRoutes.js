@@ -33,25 +33,31 @@ const crypto = require('crypto');
 const sendVerificationCode = require('../UtilsMailer');
 const pool = require('../config/db');
 
-const verificationCodes = {}; // temporal
-
 router.post('/pre-register', async (req, res) => {
   const { email } = req.body;
   if (!email) return res.status(400).json({ message: 'Email requerido' });
 
   const code = crypto.randomInt(100000, 999999).toString();
-  verificationCodes[email] = code;
-
-  // Borrar el código en 2 minutos
-  setTimeout(() => {
-    delete verificationCodes[email];
-  }, 2 * 60 * 1000); // 2 minutos
 
   try {
+    // Guardar el código en la base de datos
     await pool.query(
       'UPDATE dueños SET verificator = $1 WHERE email = $2',
       [code, email]
     );
+
+    // Borrar el código de la base de datos luego de 2 minutos
+    setTimeout(async () => {
+      try {
+        await pool.query(
+          'UPDATE dueños SET verificator = NULL WHERE email = $1',
+          [email]
+        );
+        console.log(`Código eliminado para: ${email}`);
+      } catch (err) {
+        console.error('Error al borrar el código:', err);
+      }
+    }, 2 * 60 * 1000); // 2 minutos
 
     await sendVerificationCode(email, code);
     res.json({ message: 'Código enviado al correo' });
@@ -61,28 +67,34 @@ router.post('/pre-register', async (req, res) => {
   }
 });
 
-
 // Verificar código y activar usuario
-router.post('/verify-code', async (req, res) => {
+router.post('/verifycode', async (req, res) => {
   const { email, code } = req.body;
-
+ console.log(req.body)
   if (!email || !code) {
     return res.status(400).json({ message: 'Email y código requeridos' });
   }
 
-  const validCode = verificationCodes[email];
-
-  if (validCode !== code) {
-    return res.status(401).json({ message: 'Código inválido' });
-  }
-
   try {
-    await pool.query(
-      'UPDATE dueños SET isdeleted = false WHERE email = $1',
+    const result = await pool.query(
+      'SELECT verificator FROM dueños WHERE email = $1',
       [email]
     );
 
-    delete verificationCodes[email];
+    if (result.rows.length === 0) {
+      return res.status(404).json({ message: 'Usuario no encontrado' });
+    }
+
+    const dbCode = result.rows[0].verificator;
+
+    if (dbCode !== code) {
+      return res.status(401).json({ message: 'Código inválido' });
+    }
+
+    await pool.query(
+      'UPDATE dueños SET isdeleted = false, verificator = NULL WHERE email = $1',
+      [email]
+    );
 
     res.json({ success: true, message: 'Cuenta verificada correctamente' });
   } catch (error) {
@@ -90,5 +102,6 @@ router.post('/verify-code', async (req, res) => {
     res.status(500).json({ message: 'Error interno' });
   }
 });
+
 
 module.exports = router;

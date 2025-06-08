@@ -23,6 +23,7 @@ const createUser = async (user) => {
         nombre: userDb.nombre,
         telefono: userDb.telefono,
         pais: userDb.pais,
+        provincia:userDb.provincia,
         localidad: userDb.localidad,
         root,
         duplicated: true,
@@ -38,8 +39,8 @@ if (!user.uid && user.password) {
 
 // Si viene con uid (por Google, por ejemplo), no hasheás nada
 const insertUser = await pool.query(
-  `INSERT INTO dueños (nombre, email, password, uid, pais, localidad, telefono, isdeleted)
-   VALUES ($1, $2, $3, $4, $5, $6, $7, true)
+  `INSERT INTO dueños (nombre, email, password, uid, pais,provincia, localidad, telefono, isdeleted)
+   VALUES ($1, $2, $3, $4, $5, $6, $7,$8, true)
    RETURNING *`,
   [
     user.nombre,
@@ -47,6 +48,7 @@ const insertUser = await pool.query(
     hashedPassword, // null si es con uid
     user.uid || null,
     user.pais || null,
+     user.provincia || null,
     user.localidad || null,
     user.telefono || null,
   

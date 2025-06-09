@@ -18,3 +18,5 @@ app.use('/users', userRoutes);
 app.listen(port, () => {
   console.log(`Servidor corriendo en http://localhost:${port}`);
 });
+
+app.use('/uploads', express.static('uploads'));

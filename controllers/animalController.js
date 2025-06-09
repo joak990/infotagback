@@ -1,19 +1,19 @@
 const pool = require('../config/db');
-
-
 exports.getAnimalByQR = async (req, res) => {
-  const { qr } = req.params;
-  console.log(qr);
+  const qr = req.params.qr; // sin modificar
+console.log('QR reciwwwwbido:', qr);
+
   const pool = require('../config/db');
 
   try {
     const result = await pool.query(
       `SELECT 
          a.nombre AS animal_nombre, 
+         a.imagen_url, 
          d.nombre AS dueño_nombre, 
          d.telefono AS dueño_telefono
        FROM animales a
-       JOIN dueños d ON a.dueño_id = d.id
+       JOIN dueños d ON a.dueno_id = d.id
        WHERE a.qr = $1`,
       [qr]
     );
@@ -21,14 +21,14 @@ exports.getAnimalByQR = async (req, res) => {
     if (result.rows.length > 0) {
       res.json(result.rows[0]);
     } else {
-      res.status(404).json({ success: false });
+      res.status(404).json({ success: false, mensaje: 'Animal no encontrado' });
     }
   } catch (error) {
     console.error('Error al buscar el animal por QR:', error);
     res.status(500).json({ mensaje: 'Error del servidor' });
   }
 };
-
+ 
 
 // Controlador para obtener todos los animales
 exports.getAllAnimals = async (req, res) => {
@@ -45,13 +45,16 @@ exports.getAllAnimals = async (req, res) => {
 // Controlador para obtener todos los animales<
 exports.createAnimal = async (req, res) => {
   try {
-    const { nombre, tipo, edad, qr, dueño_id, codseg } = req.body;
+    const { nombre, tipo, edad, qr, dueno_id, codseg } = req.body;
+
+    // Si se subió una imagen, tomamos su nombre
+    const imagen_url = req.file ? `/uploads/${req.file.filename}` : null;
 
     const insertAnimal = await pool.query(
-      `INSERT INTO animales (nombre, tipo, edad, qr, dueño_id, codseg)
-       VALUES ($1, $2, $3, $4, $5, $6)
+      `INSERT INTO animales (nombre, tipo, edad, qr, dueno_id, codseg, imagen_url)
+       VALUES ($1, $2, $3, $4, $5, $6, $7)
        RETURNING *`,
-      [nombre, tipo, edad, qr, dueño_id, codseg]
+      [nombre, tipo, edad, qr, dueno_id, codseg, imagen_url]
     );
 
     res.status(201).json(insertAnimal.rows[0]);
@@ -60,7 +63,6 @@ exports.createAnimal = async (req, res) => {
     res.status(500).json({ mensaje: 'Error al crear el animal' });
   }
 };
-
 
 exports.getAnimalMedicalInfo = async (req, res) => {
   try {

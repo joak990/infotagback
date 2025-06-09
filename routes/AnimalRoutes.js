@@ -1,17 +1,24 @@
 // routes/animalRoutes.js
 const express = require('express');
 const router = express.Router();
-const { getAnimalByQR, getAllAnimals, createAnimal, getAnimalMedicalInfo } = require('../controllers/animalController');
+const upload = require('../middleware/multer'); // 👈 importás multer
+const {
+  getAnimalByQR,
+  getAllAnimals,
+  createAnimal,
+  getAnimalMedicalInfo
+} = require('../controllers/animalController');
 
-// Ruta para obtener todos los animales
+// Obtener todos los animales
 router.get('/animales', getAllAnimals);
 
-// Ruta dinámica para obtener animal por QR
+// Obtener animal por QR
 router.get('/:qr', getAnimalByQR);
 
-router.post('/registeranimal', createAnimal);
+// Crear animal con imagen
+router.post('/registeranimal', upload.single('imagen'), createAnimal); // 👈 acá
 
+// Obtener info médica
 router.post('/getmedicaldata', getAnimalMedicalInfo);
-
 
 module.exports = router;
